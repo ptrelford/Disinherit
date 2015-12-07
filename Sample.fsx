@@ -1,4 +1,4 @@
-﻿#r "./bin/debug/Disinherited.dll"
+﻿#r "./bin/debug/Disinherit.dll"
 
 open Disinherit
 
@@ -15,3 +15,9 @@ button.DoubleClick.Add(fun e -> ())
 // Reference all instance members
 button.__Instance.Click.Add(fun e -> ())
 
+#r "WindowsBase.dll"
+#r "PresentationCore.dll"
+#r "PresentationFramework.dll"
+type WPF = Disinherited< @"PresentationFramework, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" >
+
+let b = WPF.Button()

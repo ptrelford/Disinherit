@@ -18,6 +18,7 @@ button.__Instance.Click.Add(fun e -> ())
 #r "WindowsBase.dll"
 #r "PresentationCore.dll"
 #r "PresentationFramework.dll"
-type WPF = Disinherited< @"PresentationFramework, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" >
+type WPF = Disinherited< @"PresentationFramework, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35", level=1 >
 
 let b = WPF.Button()
+b.Click.Add(fun e -> ())

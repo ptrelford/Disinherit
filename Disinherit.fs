@@ -58,31 +58,48 @@ type DisinheritedProvider (config:TypeProviderConfig) as this =
         s.Append("</summary>") |> ignore
         s.ToString()
 
-    let providedTypes (types:System.Type[]) =
+    let rec heirarchy (ty:System.Type) =
+        match ty with
+        | null -> []
+        | ty -> ty::heirarchy(ty.BaseType)
+
+    let providedTypes (types:System.Type[]) level =
         [for ty in types |> Seq.where(fun x -> x.IsPublic) ->
             let def = ProvidedTypeDefinition(ty.Name, baseType=Some typeof<obj>, HideObjectMethods=true)
             def.AddXmlDocDelayed(fun () -> createXmlDoc ty)
             let instance = ProvidedProperty("__Instance", ty)
             instance.GetterCode <- fun args -> Expr.Coerce(args.[0],ty)
             def.AddMember(instance)
-            let members = ty.GetMembers() |> Array.filter (fun x -> x.DeclaringType = ty)
+            let heirarchy = heirarchy ty
+            let members = 
+                ty.GetMembers() 
+                |> Array.filter (fun m ->
+                    match heirarchy |> List.tryFindIndex (fun t -> t = m.DeclaringType) with
+                    | Some i -> i <= level
+                    | None -> false
+                )
             for mem in members do addMember def ty mem
             def
         ]
 
     let ns = "Disinherit"
     let asm = System.Reflection.Assembly.GetExecutingAssembly()
-    let providedType = ProvidedTypeDefinition(asm, ns, "Disinherited", Some typeof<obj>)    
+    let providedType = ProvidedTypeDefinition(asm, ns, "Disinherited", Some typeof<obj>)
     do  providedType.DefineStaticParameters(
-            staticParameters=[ProvidedStaticParameter("assembly", typeof<string>)],
+            staticParameters=[ProvidedStaticParameter("assemblyName", typeof<string>);
+                              ProvidedStaticParameter("level", typeof<int>, parameterDefaultValue=0)],
             apply=(fun typeName parameterValues ->
                 let name = 
-                    match parameterValues with
-                    | [| :? string as assembly |] -> assembly
-                    | _ -> invalidArg "assembly" ""
+                    match parameterValues.[0] with
+                    | :? string as assembly -> assembly
+                    | _ -> invalidArg "assemblyName" "Expecting assembly name"
+                let level =
+                    match parameterValues.[1] with
+                    | :? int as level -> level
+                    | _ -> invalidArg "level" "Expecting level"
                 let ty = ProvidedTypeDefinition(asm, ns, typeName, Some typeof<obj>)
                 let types = Assembly.Load(name).GetTypes()
-                ty.AddMembersDelayed(fun () -> providedTypes types)
+                ty.AddMembersDelayed(fun () -> providedTypes types level)
                 ty
             )
         )

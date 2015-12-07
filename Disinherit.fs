@@ -79,6 +79,10 @@ type DisinheritedProvider (config:TypeProviderConfig) as this =
                     | None -> false
                 )
             for mem in members do addMember def ty mem
+            let from = ProvidedMethod("From", [ProvidedParameter("instance",ty)], def)
+            from.IsStaticMethod <- true
+            from.InvokeCode <- fun args -> Expr.Coerce(args.[0],def)
+            def.AddMember(from)
             def
         ]
 

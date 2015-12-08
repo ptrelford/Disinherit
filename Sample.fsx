@@ -21,17 +21,9 @@ button.__Instance.Click.Add(fun e -> ())
 [<Literal>]
 let name = @"PresentationFramework, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35"
 type WPF = Disinherited< name , level=1 >
-let button = WPF.Button()
-
+let button' = WPF.Button()
 // Access level 1 inherited event
-b.Click.Add(fun e -> ())
+button'.Click.Add(fun e -> ())
 // Get disinherited instance from existing instance
 let from = WPF.Button.From(System.Windows.Controls.Button())
 from.IsPressed
-
-let button = WPF.Button()
-button.__Instance.
-
-
-let b = System.Windows.Controls.Button()
-b.

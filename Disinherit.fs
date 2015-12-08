@@ -18,7 +18,8 @@ type DisinheritedProvider (config:TypeProviderConfig) as this =
         match mem.MemberType with
         | MemberTypes.Constructor ->
             let ci = mem :?> ConstructorInfo
-            let c = ProvidedConstructor(toParams ci,InvokeCode=fun args -> Expr.Coerce(Expr.NewObject(ci,args), typeof<obj>))
+            let c = ProvidedConstructor(toParams ci)
+            c.InvokeCode <- fun args -> Expr.Coerce(Expr.NewObject(ci,args), typeof<obj>)
             def.AddMember(c)
         | MemberTypes.Field ->
             let fi = mem :?> FieldInfo
@@ -27,7 +28,10 @@ type DisinheritedProvider (config:TypeProviderConfig) as this =
         | MemberTypes.Property ->
             let pi = mem :?> PropertyInfo
             let prop = ProvidedProperty(mem.Name, pi.PropertyType) 
-            prop.GetterCode <- fun args -> Expr.PropertyGet(Expr.Coerce(args.[0],ty), pi)
+            if pi.CanRead then
+                prop.GetterCode <- fun args -> Expr.PropertyGet(Expr.Coerce(args.[0],ty), pi)
+            if pi.CanWrite then
+                prop.SetterCode <- fun args -> Expr.PropertySet(Expr.Coerce(args.[0],ty), pi, args.[1])
             def.AddMember(prop)
         | MemberTypes.Event ->
             let ei = mem :?> EventInfo
